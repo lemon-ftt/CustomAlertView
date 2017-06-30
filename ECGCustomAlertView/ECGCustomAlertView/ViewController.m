@@ -71,7 +71,7 @@
 
 - (NSArray *)dataArr {
     if (!_dataArr) {
-        _dataArr = [NSArray arrayWithObjects:@"底部两个button效果", @"底部单个button效果", @"无标题效果", @"底部button样式修改", @"多个button效果", @"自定义弹出视图", @"有标题自定义输入框视图",@"无标题自定义输入框视图",@"等待框",@"屏幕下方展示提示信息",@"测试自定义视图",@"测试4",@"测试5", nil];
+        _dataArr = [NSArray arrayWithObjects:@"底部两个button效果", @"底部单个button效果", @"无标题效果", @"底部button样式修改", @"多个button效果", @"自定义弹出视图", @"有标题自定义输入框视图",@"无标题自定义输入框视图",@"等待框",@"屏幕下方展示提示信息",@"测试自定义视图",@"测试4",@"测试5",@"可以点击屏幕取消等待框", nil];
     }
     return _dataArr;
 }
@@ -175,6 +175,10 @@
         case 8:
         {
             [ECGCustomAlertView showWaitPopViewWithContent:@"测试测试测试测试测试测试测试测试测试测试测试测试测试测试"];
+            dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC);
+            dispatch_after(time, dispatch_get_main_queue(), ^{
+                [ECGCustomAlertView dismissWaitPopView];
+            });
             
             break;
         }
@@ -245,6 +249,17 @@
 //            [self presentViewController:alertVc animated:NO completion:^{
 //                alertVc.view.backgroundColor=[UIColor colorWithRed:0 green:0 blue:0 alpha:0.5];
 //            }];
+            
+            break;
+        }
+            
+        case 13:
+        {
+            [[ECGCustomAlertView shareInstancetype] showWaitPopViewWithContent:@"测试测试测试测试测试测试测试测试测试测试测试测试测试测试" complete:^{
+                NSLog(@"%@",[NSThread currentThread]);
+                NSLog(@"%@",[NSThread mainThread]);
+            }];
+            
             
             break;
         }

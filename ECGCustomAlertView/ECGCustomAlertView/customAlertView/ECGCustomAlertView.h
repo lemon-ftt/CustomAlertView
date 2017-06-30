@@ -48,6 +48,8 @@ typedef void(^clickHandleWithIndex)(NSInteger index);
 
 typedef void(^rightClick)(int index,NSString *content);//index区别点击的button(左边按钮为0，右边按钮为1)，content文本内容
 
+typedef void(^touchCancelHandle)(void); //点击屏幕取消等待框
+
 typedef NS_ENUM(NSInteger, ECGAlertViewButtonType) {//底部button的样式
     ECGAlertViewButtonTypeDefault = 0,
     ECGAlertViewButtonTypeCancel,
@@ -69,6 +71,11 @@ typedef NS_ENUM(NSInteger, ECGAlertViewButtonType) {//底部button的样式
 @property (nonatomic, getter=isCustomAlert) BOOL customAlert;
 @property (nonatomic, getter=isDismissWhenTouchBackground) BOOL dismissWhenTouchBackground;
 @property (nonatomic, getter=isAlertReady) BOOL alertReady;
+@property (nonatomic, copy) touchCancelHandle touchCancelHandle;
+
+
++(instancetype)shareInstancetype;
+
 
 // ------------------------布局----------------------
 - (void)setup;
@@ -107,6 +114,18 @@ typedef NS_ENUM(NSInteger, ECGAlertViewButtonType) {//底部button的样式
  取消等待框
  */
 + (void)dismissWaitPopView;
+
+/**
+ 展示等待框-----点屏幕可以取消的
+ 
+ @param content <#content description#>
+ */
+- (void)showWaitPopViewWithContent:(NSString *)content complete:(touchCancelHandle)compelete;
+
+/**
+ 等待框消失
+ */
+- (void)dismissWaitPopView;
 
 
 /**
@@ -175,7 +194,18 @@ typedef NS_ENUM(NSInteger, ECGAlertViewButtonType) {//底部button的样式
 
 @end
 
+
+@protocol WaitPopViewDelegate <NSObject>
+
+@optional
+
+- (void)touchCancel;
+
+@end
+
 @interface WaitPopView : NSObject //等待框
+
+@property (weak, nonatomic) id <WaitPopViewDelegate> delegate;
 
 /**
  等待框
@@ -184,10 +214,12 @@ typedef NS_ENUM(NSInteger, ECGAlertViewButtonType) {//底部button的样式
  */
 + (void)showMessage:(NSString *)message;
 
+- (void)showMessage:(NSString *)message;
+
 /**
  等待框消失
  */
-+ (void)dismissWaitPopView;
+- (void)dismissWaitPopView;
 
 @end
 

@@ -20,7 +20,7 @@
 //#import "Masonry.h"
 
 
-@interface ECGCustomAlertView () <ECGLoadsAlertViewControllerDelegate>
+@interface ECGCustomAlertView () <ECGLoadsAlertViewControllerDelegate,WaitPopViewDelegate>
 
 
 
@@ -66,8 +66,25 @@ static WaitPopView* kInstance;
         _coverView = [[UIView alloc] initWithFrame:[UIScreen mainScreen].bounds];
         _coverView.backgroundColor = [UIColor colorWithRed:(5/255.0) green:(0/255.0) blue:(10/255.0) alpha:0.5];
         [_coverView addSubview:self.view];
+        
+        // 单击的 Recognizer
+        UITapGestureRecognizer* singleRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(SingleTap:)];
+        //点击的次数
+        singleRecognizer.numberOfTapsRequired = 1; // 单击
+        
+        //给self.view添加一个手势监测；
+        
+        [_coverView addGestureRecognizer:singleRecognizer];
     }
     return _coverView;
+}
+
+- (void)SingleTap:(UITapGestureRecognizer*)recognizer {
+    NSLog(@"屏幕被点击了");
+    if (_delegate && [_delegate respondsToSelector:@selector(touchCancel)]) {
+        [_delegate touchCancel];
+        [self dismissWaitPopView];
+    }
 }
 
 - (UIView *)view {
@@ -148,20 +165,36 @@ static WaitPopView* kInstance;
 //    hud.removeFromSuperViewOnHide = YES;
 ////    hud.mode = MBProgressHUDModeIndeterminate;
 //    hud.offset = CGPointMake(0, -([WaitPopView shareInstance].view.bounds.size.height)/2);
-    dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC);
-    dispatch_after(time, dispatch_get_main_queue(), ^{
-        [self dismissWaitPopView];
-    });
+//    dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC);
+//    dispatch_after(time, dispatch_get_main_queue(), ^{
+//        [self dismissWaitPopView];
+//    });
     
 }
 
-+ (void)dismissWaitPopView {
-    [[WaitPopView shareInstance].actView stopAnimating];
-    [[WaitPopView shareInstance].coverView removeFromSuperview];
-//    [[WaitPopView shareInstance].alertView dismissWithCompletion:^{
-//        // 处理内容
-//        NSLog(@"弹出窗被关闭了");
-//    }];
+/**
+ 显示一些信息
+ 
+ @param message 信息内容
+ */
+- (void)showMessage:(NSString *)message {
+    
+    if (!self.coverView) {
+        return;
+    }
+    
+    self.actView.hidden = NO;
+    [self.actView startAnimating];
+    self.content = message;
+    self.contentLabel.text = message;
+    [[UIApplication sharedApplication].keyWindow addSubview:self.coverView];
+    
+}
+
+
+- (void)dismissWaitPopView {
+    [self.actView stopAnimating];
+    [self.coverView removeFromSuperview];
 }
 
 
@@ -285,6 +318,14 @@ static WaitPopView* kInstance;
 
 @implementation ECGCustomAlertView
 
+static ECGCustomAlertView *alert = nil;
++(instancetype)shareInstancetype {
+    if (!alert) {
+        alert = [[ECGCustomAlertView alloc]init];
+    }
+    return alert;
+}
+
 - (NSArray *)buttons{
     if (!_buttons) {
         _buttons = [NSArray array];
@@ -356,10 +397,38 @@ static WaitPopView* kInstance;
 }
 
 /**
+ 展示等待框-----点屏幕可以取消的
+ 
+ @param content <#content description#>
+ */
+- (void)showWaitPopViewWithContent:(NSString *)content complete:(touchCancelHandle)compelete {
+    self.touchCancelHandle = ^{
+        compelete();
+    };
+    WaitPopView *wait = [WaitPopView shareInstance];
+    wait.delegate = self;
+    [wait showMessage:content];
+}
+
+/**
  等待框消失
  */
 + (void)dismissWaitPopView {
-    [WaitPopView dismissWaitPopView];
+    WaitPopView *wait = [WaitPopView shareInstance];
+    [wait dismissWaitPopView];
+}
+
+/**
+ 等待框消失
+ */
+- (void)dismissWaitPopView {
+    WaitPopView *wait = [WaitPopView shareInstance];
+    [wait dismissWaitPopView];
+}
+
+#pragma mark- WaitPopViewDelegate
+-(void)touchCancel {
+    self.touchCancelHandle();
 }
 
 + (void)showOneButtonWithTitle:(NSString *)title Message:(NSString *)message ButtonType:(ECGAlertViewButtonType)buttonType ButtonTitle:(NSString *)buttonTitle Click:(clickHandle)click{
@@ -411,7 +480,7 @@ buttonType ButtonTitle:(NSString *)buttonTitle Click:(clickHandle)click ButtonTy
 
 + (void)showContainsTextViewWithTitle:(NSString *)title leftButtonTitle:(NSString *)leftButtonTitle rightButtonTitle:(NSString *)rightButtonTitle placeholderText:(NSString *)placeholderText tipLabelTitle:(int)tipLabelTextNum click:(rightClick)click {
     ECGUIContainTextView *myInputView = [[ECGUIContainTextView alloc]initPagesViewWithTitle:title leftButtonTitle:leftButtonTitle rightButtonTitle:rightButtonTitle placeholderText:placeholderText tipLabelTitle:tipLabelTextNum];
-    ECGCustomAlertView *alertView = [[ECGCustomAlertView alloc]initWithCustomView:myInputView dismissWhenTouchedBackground:NO];
+    ECGCustomAlertView *alertView = [[ECGCustomAlertView alloc]initWithCustomView:myInputView dismissWhenTouchedBackground:YES];
     [alertView show];
     myInputView.leftBlock=^(NSString *text)
     {
