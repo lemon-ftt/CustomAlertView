@@ -320,9 +320,10 @@ static WaitPopView* kInstance;
 
 static ECGCustomAlertView *alert = nil;
 +(instancetype)shareInstancetype {
-    if (!alert) {
+    static dispatch_once_t predicate;
+    dispatch_once(&predicate, ^{
         alert = [[ECGCustomAlertView alloc]init];
-    }
+    });
     return alert;
 }
 
